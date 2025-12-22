@@ -1,0 +1,6 @@
+streamlit
+pillow
+python-docx
+PyPDF2
+deep-translator
+reportlab
