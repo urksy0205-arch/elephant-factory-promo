@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 코끼리공장 다국어 홍보물 자동 생성 시스템 v3.0
-카드뉴스 기능 추가
 """
 
 import streamlit as st
@@ -23,7 +22,8 @@ import re
 st.set_page_config(
     page_title="코끼리공장 홍보물 생성기",
     page_icon="🐘",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # ============================================
@@ -41,21 +41,34 @@ LANGUAGES = {
     'si': 'සිංහල 🇱🇰'
 }
 
-# 코끼리공장 브랜드 컬러 (이미지 참고)
 BRAND_COLOR = '#2B9FD9'
-BACKGROUND_COLOR = '#E8F4F8'  # 연한 하늘색
+BACKGROUND_COLOR = '#E8F4F8'  # 연한 하늘색 배경
 TEXT_COLOR = '#2C3E50'
 ACCENT_COLOR = '#FF6B6B'
 
 # ============================================
-# CSS 스타일 (통일된 색상)
+# CSS 스타일 (연한 하늘색 배경)
 # ============================================
 
 st.markdown(f"""
 <style>
-    .main {{
+    /* 전체 배경 */
+    .stApp {{
         background-color: {BACKGROUND_COLOR};
     }}
+    
+    /* 메인 컨텐츠 영역 */
+    .main .block-container {{
+        background-color: {BACKGROUND_COLOR};
+        padding-top: 2rem;
+    }}
+    
+    /* 사이드바 */
+    section[data-testid="stSidebar"] {{
+        background-color: white;
+    }}
+    
+    /* 헤더 */
     .main-header {{
         text-align: center;
         padding: 2rem;
@@ -65,6 +78,8 @@ st.markdown(f"""
         margin-bottom: 2rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }}
+    
+    /* 버튼 */
     .stButton>button {{
         width: 100%;
         background-color: {BRAND_COLOR};
@@ -80,6 +95,8 @@ st.markdown(f"""
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }}
+    
+    /* 박스 스타일 */
     .summary-box {{
         padding: 1.5rem;
         background-color: white;
@@ -104,6 +121,8 @@ st.markdown(f"""
         margin: 1rem 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }}
+    
+    /* 탭 스타일 */
     .stTabs [data-baseweb="tab-list"] {{
         background-color: white;
         border-radius: 5px;
@@ -115,6 +134,18 @@ st.markdown(f"""
     .stTabs [aria-selected="true"] {{
         background-color: {BRAND_COLOR};
         color: white;
+    }}
+    
+    /* 입력 필드 */
+    .stTextArea textarea, .stTextInput input {{
+        background-color: white;
+    }}
+    
+    /* 파일 업로더 */
+    .stFileUploader {{
+        background-color: white;
+        padding: 1rem;
+        border-radius: 5px;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -351,7 +382,7 @@ def translate_text(text, target_lang):
         return text
 
 # ============================================
-# 이미지 생성 함수 (업그레이드)
+# 이미지 생성 함수 (공공기관 스타일 심플)
 # ============================================
 
 def create_promo_image(title, content, lang_code, size_type='social'):
@@ -361,24 +392,17 @@ def create_promo_image(title, content, lang_code, size_type='social'):
     if size_type == 'social':
         width, height = 1080, 1080
     elif size_type == 'cardnews':
-        width, height = 1080, 1920  # 세로형 카드뉴스
+        width, height = 1080, 1920
     else:  # a4
         width, height = 2480, 3508
     
-    # 배경 생성 (연한 하늘색)
-    img = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    # 배경 생성 (흰색)
+    img = Image.new('RGB', (width, height), 'white')
     draw = ImageDraw.Draw(img)
     
     # 상단 파란색 바
     header_height = int(height * 0.12)
     draw.rectangle([(0, 0), (width, header_height)], fill=BRAND_COLOR)
-    
-    # 하단 주황색 바
-    footer_height = int(height * 0.04)
-    draw.rectangle(
-        [(0, height - footer_height), (width, height)], 
-        fill=ACCENT_COLOR
-    )
     
     # 로고 추가
     try:
@@ -391,7 +415,7 @@ def create_promo_image(title, content, lang_code, size_type='social'):
             if logo.mode != 'RGBA':
                 logo = logo.convert('RGBA')
             
-            img.paste(logo, (30, 30), logo)
+            img.paste(logo, (30, int(header_height/2 - logo_height/2)), logo)
     except:
         pass
     
@@ -424,21 +448,21 @@ def create_promo_image(title, content, lang_code, size_type='social'):
     return img
 
 def create_cardnews(info, lang_code='ko'):
-    """카드뉴스 생성 (여러 장)"""
+    """카드뉴스 생성 (공공기관 스타일 - 심플)"""
     cards = []
     width, height = 1080, 1920
     
     # 폰트 설정
     try:
-        title_font = ImageFont.truetype("malgun.ttf", 80)
+        title_font = ImageFont.truetype("malgun.ttf", 70)
         subtitle_font = ImageFont.truetype("malgun.ttf", 50)
-        content_font = ImageFont.truetype("malgun.ttf", 40)
+        content_font = ImageFont.truetype("malgun.ttf", 45)
         small_font = ImageFont.truetype("malgun.ttf", 35)
     except:
         try:
-            title_font = ImageFont.truetype("arial.ttf", 80)
+            title_font = ImageFont.truetype("arial.ttf", 70)
             subtitle_font = ImageFont.truetype("arial.ttf", 50)
-            content_font = ImageFont.truetype("arial.ttf", 40)
+            content_font = ImageFont.truetype("arial.ttf", 45)
             small_font = ImageFont.truetype("arial.ttf", 35)
         except:
             title_font = ImageFont.load_default()
@@ -446,101 +470,14 @@ def create_cardnews(info, lang_code='ko'):
             content_font = ImageFont.load_default()
             small_font = ImageFont.load_default()
     
-    # 카드 1: 표지
-    card1 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    # 카드 1: 표지 (심플)
+    card1 = Image.new('RGB', (width, height), 'white')
     draw1 = ImageDraw.Draw(card1)
     
     # 상단 바
-    draw1.rectangle([(0, 0), (width, 250)], fill=BRAND_COLOR)
+    draw1.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
     
     # 로고
-    try:
-        if Path('logos/logo.png').exists():
-            logo = Image.open('logos/logo.png')
-            logo_width = 300
-            logo_height = int(logo_width * logo.size[1] / logo.size[0])
-            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
-            if logo.mode != 'RGBA':
-                logo = logo.convert('RGBA')
-            card1.paste(logo, (50, 50), logo)
-    except:
-        pass
-    
-    # 제목
-    title_text = info['title'] if info['title'] else "코끼리공장 안내"
-    draw1.text((width//2, height//2 - 100), title_text, fill=TEXT_COLOR, font=title_font, anchor="mm")
-    
-    # 부제
-    draw1.text((width//2, height//2 + 50), "Elephant Factory", fill=BRAND_COLOR, font=subtitle_font, anchor="mm")
-    
-    # 하단 바
-    draw1.rectangle([(0, height-100), (width, height)], fill=ACCENT_COLOR)
-    draw1.text((width//2, height-50), "카드뉴스", fill='white', font=content_font, anchor="mm")
-    
-    cards.append(card1)
-    
-    # 카드 2: 핵심 정보
-    card2 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
-    draw2 = ImageDraw.Draw(card2)
-    
-    draw2.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
-    draw2.text((width//2, 100), "📅 일정 및 장소", fill='white', font=subtitle_font, anchor="mm")
-    
-    y_pos = 350
-    if info['date']:
-        draw2.text((100, y_pos), f"📅 {info['date']}", fill=TEXT_COLOR, font=content_font)
-        y_pos += 120
-    
-    if info['time']:
-        draw2.text((100, y_pos), f"🕐 {info['time']}", fill=TEXT_COLOR, font=content_font)
-        y_pos += 120
-    
-    if info['location']:
-        loc_text = info['location'].replace('장소:', '').replace('장소', '').strip()
-        draw2.text((100, y_pos), f"📍 {loc_text}", fill=TEXT_COLOR, font=content_font)
-    
-    draw2.rectangle([(0, height-100), (width, height)], fill=BRAND_COLOR)
-    draw2.text((width//2, height-50), "1/3", fill='white', font=small_font, anchor="mm")
-    
-    cards.append(card2)
-    
-    # 카드 3: 신청 방법
-    card3 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
-    draw3 = ImageDraw.Draw(card3)
-    
-    draw3.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
-    draw3.text((width//2, 100), "✅ 신청 방법", fill='white', font=subtitle_font, anchor="mm")
-    
-    y_pos = 350
-    if info['target']:
-        target_text = info['target'].replace('대상:', '').replace('대상', '').strip()
-        draw3.text((100, y_pos), f"👥 {target_text}", fill=TEXT_COLOR, font=content_font)
-        y_pos += 150
-    
-    if info['how_to_apply']:
-        apply_text = info['how_to_apply'].replace('신청:', '').replace('신청', '').strip()
-        draw3.text((100, y_pos), f"✍️ {apply_text}", fill=TEXT_COLOR, font=content_font)
-    
-    draw3.rectangle([(0, height-100), (width, height)], fill=BRAND_COLOR)
-    draw3.text((width//2, height-50), "2/3", fill='white', font=small_font, anchor="mm")
-    
-    cards.append(card3)
-    
-    # 카드 4: 연락처
-    card4 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
-    draw4 = ImageDraw.Draw(card4)
-    
-    draw4.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
-    draw4.text((width//2, 100), "📞 문의", fill='white', font=subtitle_font, anchor="mm")
-    
-    y_pos = 450
-    if info['contact']:
-        draw4.text((100, y_pos), info['contact'], fill=TEXT_COLOR, font=content_font)
-        y_pos += 150
-    
-    draw4.text((width//2, y_pos + 100), "💙 많은 참여 바랍니다 💙", fill=BRAND_COLOR, font=subtitle_font, anchor="mm")
-    
-    # 로고 (하단)
     try:
         if Path('logos/logo.png').exists():
             logo = Image.open('logos/logo.png')
@@ -549,12 +486,122 @@ def create_cardnews(info, lang_code='ko'):
             logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
             if logo.mode != 'RGBA':
                 logo = logo.convert('RGBA')
-            card4.paste(logo, (width//2 - logo_width//2, height - 400), logo)
+            card1.paste(logo, (50, int(100 - logo_height/2)), logo)
     except:
         pass
     
-    draw4.rectangle([(0, height-100), (width, height)], fill=ACCENT_COLOR)
-    draw4.text((width//2, height-50), "3/3", fill='white', font=small_font, anchor="mm")
+    # 제목 (중앙, 크게)
+    title_text = info['title'] if info['title'] else "코끼리공장 안내"
+    
+    # 제목을 여러 줄로 나누기
+    title_lines = []
+    if len(title_text) > 15:
+        words = title_text.split()
+        current_line = ""
+        for word in words:
+            if len(current_line + word) > 15:
+                title_lines.append(current_line.strip())
+                current_line = word + " "
+            else:
+                current_line += word + " "
+        if current_line:
+            title_lines.append(current_line.strip())
+    else:
+        title_lines = [title_text]
+    
+    # 제목 그리기
+    y_start = height // 2 - (len(title_lines) * 80)
+    for i, line in enumerate(title_lines):
+        draw1.text((width//2, y_start + (i * 100)), line, fill=TEXT_COLOR, font=title_font, anchor="mm")
+    
+    # 하단 바
+    draw1.rectangle([(0, height-80), (width, height)], fill=BRAND_COLOR)
+    
+    cards.append(card1)
+    
+    # 카드 2: 일정/장소 (심플)
+    card2 = Image.new('RGB', (width, height), 'white')
+    draw2 = ImageDraw.Draw(card2)
+    
+    # 상단 타이틀
+    draw2.rectangle([(0, 0), (width, 150)], fill=BRAND_COLOR)
+    draw2.text((width//2, 75), "일정 및 장소", fill='white', font=subtitle_font, anchor="mm")
+    
+    # 내용
+    y_pos = 400
+    line_spacing = 150
+    
+    if info['date']:
+        draw2.text((100, y_pos), f"📅  {info['date']}", fill=TEXT_COLOR, font=content_font)
+        y_pos += line_spacing
+    
+    if info['time']:
+        draw2.text((100, y_pos), f"🕐  {info['time']}", fill=TEXT_COLOR, font=content_font)
+        y_pos += line_spacing
+    
+    if info['location']:
+        loc_text = info['location'].replace('장소:', '').replace('장소', '').strip()
+        draw2.text((100, y_pos), f"📍  {loc_text}", fill=TEXT_COLOR, font=content_font)
+    
+    # 하단
+    draw2.rectangle([(0, height-80), (width, height)], fill='#E0E0E0')
+    draw2.text((width//2, height-40), "1 / 3", fill=TEXT_COLOR, font=small_font, anchor="mm")
+    
+    cards.append(card2)
+    
+    # 카드 3: 신청방법 (심플)
+    card3 = Image.new('RGB', (width, height), 'white')
+    draw3 = ImageDraw.Draw(card3)
+    
+    draw3.rectangle([(0, 0), (width, 150)], fill=BRAND_COLOR)
+    draw3.text((width//2, 75), "신청 방법", fill='white', font=subtitle_font, anchor="mm")
+    
+    y_pos = 400
+    
+    if info['target']:
+        target_text = info['target'].replace('대상:', '').replace('대상', '').strip()
+        draw3.text((100, y_pos), f"👥  {target_text}", fill=TEXT_COLOR, font=content_font)
+        y_pos += 180
+    
+    if info['how_to_apply']:
+        apply_text = info['how_to_apply'].replace('신청:', '').replace('신청', '').strip()
+        draw3.text((100, y_pos), f"✍️  {apply_text}", fill=TEXT_COLOR, font=content_font)
+    
+    draw3.rectangle([(0, height-80), (width, height)], fill='#E0E0E0')
+    draw3.text((width//2, height-40), "2 / 3", fill=TEXT_COLOR, font=small_font, anchor="mm")
+    
+    cards.append(card3)
+    
+    # 카드 4: 연락처 (심플)
+    card4 = Image.new('RGB', (width, height), 'white')
+    draw4 = ImageDraw.Draw(card4)
+    
+    draw4.rectangle([(0, 0), (width, 150)], fill=BRAND_COLOR)
+    draw4.text((width//2, 75), "문의", fill='white', font=subtitle_font, anchor="mm")
+    
+    y_pos = 500
+    
+    if info['contact']:
+        draw4.text((100, y_pos), f"📞  {info['contact']}", fill=TEXT_COLOR, font=content_font)
+        y_pos += 200
+    
+    draw4.text((width//2, y_pos + 100), "많은 참여 바랍니다", fill=BRAND_COLOR, font=subtitle_font, anchor="mm")
+    
+    # 로고 (하단)
+    try:
+        if Path('logos/logo.png').exists():
+            logo = Image.open('logos/logo.png')
+            logo_width = 300
+            logo_height = int(logo_width * logo.size[1] / logo.size[0])
+            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+            if logo.mode != 'RGBA':
+                logo = logo.convert('RGBA')
+            card4.paste(logo, (width//2 - logo_width//2, height - 450), logo)
+    except:
+        pass
+    
+    draw4.rectangle([(0, height-80), (width, height)], fill='#E0E0E0')
+    draw4.text((width//2, height-40), "3 / 3", fill=TEXT_COLOR, font=small_font, anchor="mm")
     
     cards.append(card4)
     
@@ -592,7 +639,7 @@ with st.sidebar:
     st.markdown("---")
     
     st.markdown("""
-    ### ✨ 새로운 기능!
+    ### ✨ 주요 기능
     - 🎴 **카드뉴스 생성**
     - 🤖 AI 자동 요약
     - 📝 홍보문 자동 생성
@@ -611,7 +658,6 @@ tab1, tab2, tab3 = st.tabs(["📝 공문 입력 & 생성", "💡 예시 보기",
 with tab1:
     st.header("1️⃣ 공문 입력")
     
-    # 입력 방식 선택
     input_method = st.radio(
         "입력 방식을 선택하세요:",
         ["📁 파일 업로드", "✏️ 직접 입력"],
@@ -735,8 +781,8 @@ with tab1:
         
         size_options = st.multiselect(
             "생성할 이미지 형식을 선택하세요",
-            ["🎴 카드뉴스 (1080x1920, 여러 장)", "소셜미디어용 (1080x1080)", "A4 인쇄용 (2480x3508)"],
-            default=["🎴 카드뉴스 (1080x1920, 여러 장)", "소셜미디어용 (1080x1080)"]
+            ["🎴 카드뉴스 (1080x1920)", "소셜미디어용 (1080x1080)", "A4 인쇄용 (2480x3508)"],
+            default=["🎴 카드뉴스 (1080x1920)", "소셜미디어용 (1080x1080)"]
         )
         
         st.header("5️⃣ 최종 생성")
@@ -755,7 +801,6 @@ with tab1:
                 images = {}
                 cardnews_images = {}
                 
-                # 카드뉴스 포함 여부 확인
                 has_cardnews = any("카드뉴스" in opt for opt in size_options)
                 other_sizes = [opt for opt in size_options if "카드뉴스" not in opt]
                 
@@ -937,38 +982,50 @@ with tab1:
 with tab2:
     st.header("💡 카드뉴스 예시")
     
-    st.info("카드뉴스는 4장으로 구성됩니다: 표지 → 일정/장소 → 신청방법 → 연락처")
+    st.info("📱 공공기관 스타일의 심플한 카드뉴스 (4장 구성)")
     
     st.markdown("""
-    ### 🎴 카드뉴스 구성
+    ### 🎴 카드 구성
     
-    1. **표지** - 제목과 로고
-    2. **일정/장소** - 날짜, 시간, 장소 정보
-    3. **신청방법** - 대상, 신청 방법
-    4. **연락처** - 문의처와 마무리 멘트
+    **1장: 표지**
+    - 깔끔한 흰 배경
+    - 제목 중앙 배치
+    - 상단에 로고
+    
+    **2장: 일정/장소**
+    - 날짜, 시간, 장소 정보
+    - 아이콘과 함께 표시
+    
+    **3장: 신청방법**
+    - 대상, 신청 방법
+    - 간결하게 정리
+    
+    **4장: 연락처**
+    - 문의처 정보
+    - 마무리 멘트
     """)
 
 with tab3:
     st.header("📖 사용 방법")
     
     st.markdown("""
-    ### 🆕 카드뉴스 기능
-    
-    - 공문 내용이 **4장의 카드**로 자동 분할
-    - 세로형 (1080x1920) 인스타그램/페이스북 최적화
-    - 각 카드는 개별 다운로드 가능
-    
     ### 🎨 디자인 특징
     
-    - 코끼리공장 브랜드 컬러 (#2B9FD9) 적용
-    - 연한 하늘색 배경 (#E8F4F8) 통일
-    - 깔끔하고 전문적인 레이아웃
+    - **웹페이지**: 연한 하늘색 배경 (#E8F4F8)
+    - **카드뉴스**: 공공기관 스타일 심플 디자인
+    - **컬러**: 코끼리공장 브랜드 컬러 통일
+    
+    ### 📱 카드뉴스
+    
+    - 세로형 (1080x1920) 인스타그램/페이스북 최적화
+    - 4장 구성: 표지 → 일정 → 신청 → 연락처
+    - 각 카드 개별 다운로드 가능
     
     ### ⚠️ 주의사항
     
-    - 카드뉴스는 한국어 기준으로 생성 후 번역
-    - 텍스트가 너무 길면 잘릴 수 있음
-    - 공문은 핵심 정보 위주로 간결하게 작성 권장
+    - 카드뉴스는 한국어 정보 기준으로 생성
+    - 공문은 핵심 정보 위주로 간결하게 작성
+    - 완전 무료, 인터넷 연결 필요
     """)
 
 # 푸터
@@ -976,9 +1033,7 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; padding: 1rem;">
     🐘 코끼리공장 다국어 홍보물 자동 생성기 v3.0<br>
-    ✨ 카드뉴스 기능 추가 | AI 자동 요약 | 완전 무료<br>
+    ✨ 카드뉴스 기능 | AI 자동 요약 | 완전 무료<br>
     Made with ❤️ for Elephant Factory
 </div>
 """, unsafe_allow_html=True)
-
-
