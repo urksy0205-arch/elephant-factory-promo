@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-코끼리공장 다국어 홍보물 자동 생성 시스템 - 완전 무료 AI 요약 버전
+코끼리공장 다국어 홍보물 자동 생성 시스템 v3.0
+카드뉴스 기능 추가
 """
 
 import streamlit as st
@@ -40,66 +41,90 @@ LANGUAGES = {
     'si': 'සිංහල 🇱🇰'
 }
 
+# 코끼리공장 브랜드 컬러 (이미지 참고)
 BRAND_COLOR = '#2B9FD9'
+BACKGROUND_COLOR = '#E8F4F8'  # 연한 하늘색
+TEXT_COLOR = '#2C3E50'
+ACCENT_COLOR = '#FF6B6B'
 
 # ============================================
-# CSS 스타일
+# CSS 스타일 (통일된 색상)
 # ============================================
 
-st.markdown("""
+st.markdown(f"""
 <style>
-    .main-header {
+    .main {{
+        background-color: {BACKGROUND_COLOR};
+    }}
+    .main-header {{
         text-align: center;
         padding: 2rem;
-        background: linear-gradient(135deg, #2B9FD9 0%, #1E88C7 100%);
+        background: linear-gradient(135deg, {BRAND_COLOR} 0%, #1E88C7 100%);
         color: white;
         border-radius: 10px;
         margin-bottom: 2rem;
-    }
-    .stButton>button {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }}
+    .stButton>button {{
         width: 100%;
-        background-color: #2B9FD9;
+        background-color: {BRAND_COLOR};
         color: white;
         font-size: 18px;
         padding: 0.5rem 1rem;
         border-radius: 5px;
         border: none;
-    }
-    .stButton>button:hover {
+        transition: all 0.3s;
+    }}
+    .stButton>button:hover {{
         background-color: #1E88C7;
-    }
-    .summary-box {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }}
+    .summary-box {{
         padding: 1.5rem;
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
+        background-color: white;
+        border-left: 4px solid {BRAND_COLOR};
         border-radius: 5px;
         margin: 1rem 0;
-    }
-    .promo-box {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    .promo-box {{
         padding: 1.5rem;
-        background-color: #d4edda;
+        background-color: white;
         border-left: 4px solid #28a745;
         border-radius: 5px;
         margin: 1rem 0;
-    }
-    .original-box {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    .original-box {{
         padding: 1.5rem;
-        background-color: #f8f9fa;
+        background-color: white;
         border-left: 4px solid #6c757d;
         border-radius: 5px;
         margin: 1rem 0;
-    }
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: white;
+        border-radius: 5px;
+        padding: 0.5rem;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        color: {TEXT_COLOR};
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {BRAND_COLOR};
+        color: white;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 무료 AI 요약 함수 (규칙 기반)
+# AI 요약 함수
 # ============================================
 
 def extract_key_info(text):
-    """
-    공문에서 핵심 정보 추출 (AI 없이 규칙 기반)
-    """
+    """공문에서 핵심 정보 추출"""
     info = {
         'title': '',
         'date': '',
@@ -114,7 +139,7 @@ def extract_key_info(text):
     lines = text.strip().split('\n')
     lines = [line.strip() for line in lines if line.strip()]
     
-    # 제목 찾기 (첫 번째 긴 줄 또는 "제목", "안내" 등이 포함된 줄)
+    # 제목 찾기
     for i, line in enumerate(lines[:5]):
         if len(line) > 5 and (
             '안내' in line or '공고' in line or '모집' in line or 
@@ -207,9 +232,7 @@ def extract_key_info(text):
     return info
 
 def create_summary(info):
-    """
-    추출된 정보를 요약문으로 변환
-    """
+    """추출된 정보를 요약문으로 변환"""
     summary_parts = []
     
     if info['title']:
@@ -239,21 +262,19 @@ def create_summary(info):
     return '\n'.join(summary_parts)
 
 def create_promo_text(info):
-    """
-    홍보문 스타일로 변환 (친근하고 간결하게)
-    """
+    """홍보문 스타일로 변환"""
     promo_parts = []
     
-    # 제목 (임팩트 있게)
+    # 제목
     if info['title']:
         title = info['title'].replace('안내', '').replace('공고', '').strip()
         promo_parts.append(f"🎉 {title} 🎉")
     else:
         promo_parts.append("🎉 코끼리공장에서 알려드립니다! 🎉")
     
-    promo_parts.append("")  # 빈 줄
+    promo_parts.append("")
     
-    # 핵심 내용 (간결하게)
+    # 핵심 내용
     content_line = "코끼리공장에서 이주민 여러분을 위한 프로그램을 준비했습니다! 💙"
     
     if '교육' in info['content']:
@@ -330,38 +351,40 @@ def translate_text(text, target_lang):
         return text
 
 # ============================================
-# 이미지 생성 함수
+# 이미지 생성 함수 (업그레이드)
 # ============================================
 
 def create_promo_image(title, content, lang_code, size_type='social'):
-    """홍보 이미지 생성"""
+    """홍보 이미지 생성 (단일)"""
     
     # 크기 설정
     if size_type == 'social':
         width, height = 1080, 1080
+    elif size_type == 'cardnews':
+        width, height = 1080, 1920  # 세로형 카드뉴스
     else:  # a4
         width, height = 2480, 3508
     
-    # 배경 생성
-    img = Image.new('RGB', (width, height), 'white')
+    # 배경 생성 (연한 하늘색)
+    img = Image.new('RGB', (width, height), BACKGROUND_COLOR)
     draw = ImageDraw.Draw(img)
     
     # 상단 파란색 바
-    header_height = int(height * 0.15)
+    header_height = int(height * 0.12)
     draw.rectangle([(0, 0), (width, header_height)], fill=BRAND_COLOR)
     
     # 하단 주황색 바
-    footer_height = int(height * 0.05)
+    footer_height = int(height * 0.04)
     draw.rectangle(
         [(0, height - footer_height), (width, height)], 
-        fill='#FF6B6B'
+        fill=ACCENT_COLOR
     )
     
-    # 로고 추가 (있는 경우)
+    # 로고 추가
     try:
         if Path('logos/logo.png').exists():
             logo = Image.open('logos/logo.png')
-            logo_width = int(width * 0.3)
+            logo_width = int(width * 0.25)
             logo_height = int(logo_width * logo.size[1] / logo.size[0])
             logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
             
@@ -374,32 +397,168 @@ def create_promo_image(title, content, lang_code, size_type='social'):
     
     # 폰트 설정
     try:
-        title_font = ImageFont.truetype("malgun.ttf", int(height * 0.05))
-        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.025))
+        title_font = ImageFont.truetype("malgun.ttf", int(height * 0.045))
+        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.022))
     except:
         try:
-            title_font = ImageFont.truetype("arial.ttf", int(height * 0.05))
-            content_font = ImageFont.truetype("arial.ttf", int(height * 0.025))
+            title_font = ImageFont.truetype("arial.ttf", int(height * 0.045))
+            content_font = ImageFont.truetype("arial.ttf", int(height * 0.022))
         except:
             title_font = ImageFont.load_default()
             content_font = ImageFont.load_default()
     
     # 제목 그리기
-    title_y = int(height * 0.25)
-    # 이모지 제거 (이미지에서는 표시 안 될 수 있음)
+    title_y = int(height * 0.22)
     title_clean = re.sub(r'[^\w\s가-힣]', '', title)
-    draw.text((50, title_y), title_clean[:50], fill='#333333', font=title_font)
+    draw.text((50, title_y), title_clean[:50], fill=TEXT_COLOR, font=title_font)
     
     # 내용 그리기
-    content_y = int(height * 0.4)
-    lines = content.split('\n')[:8]
+    content_y = int(height * 0.35)
+    lines = content.split('\n')[:10]
     
     for i, line in enumerate(lines):
-        y = content_y + (i * int(height * 0.04))
+        y = content_y + (i * int(height * 0.035))
         line_clean = re.sub(r'[^\w\s가-힣:/-]', '', line)
-        draw.text((50, y), line_clean[:60], fill='#333333', font=content_font)
+        draw.text((50, y), line_clean[:60], fill=TEXT_COLOR, font=content_font)
     
     return img
+
+def create_cardnews(info, lang_code='ko'):
+    """카드뉴스 생성 (여러 장)"""
+    cards = []
+    width, height = 1080, 1920
+    
+    # 폰트 설정
+    try:
+        title_font = ImageFont.truetype("malgun.ttf", 80)
+        subtitle_font = ImageFont.truetype("malgun.ttf", 50)
+        content_font = ImageFont.truetype("malgun.ttf", 40)
+        small_font = ImageFont.truetype("malgun.ttf", 35)
+    except:
+        try:
+            title_font = ImageFont.truetype("arial.ttf", 80)
+            subtitle_font = ImageFont.truetype("arial.ttf", 50)
+            content_font = ImageFont.truetype("arial.ttf", 40)
+            small_font = ImageFont.truetype("arial.ttf", 35)
+        except:
+            title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
+            content_font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
+    
+    # 카드 1: 표지
+    card1 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    draw1 = ImageDraw.Draw(card1)
+    
+    # 상단 바
+    draw1.rectangle([(0, 0), (width, 250)], fill=BRAND_COLOR)
+    
+    # 로고
+    try:
+        if Path('logos/logo.png').exists():
+            logo = Image.open('logos/logo.png')
+            logo_width = 300
+            logo_height = int(logo_width * logo.size[1] / logo.size[0])
+            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+            if logo.mode != 'RGBA':
+                logo = logo.convert('RGBA')
+            card1.paste(logo, (50, 50), logo)
+    except:
+        pass
+    
+    # 제목
+    title_text = info['title'] if info['title'] else "코끼리공장 안내"
+    draw1.text((width//2, height//2 - 100), title_text, fill=TEXT_COLOR, font=title_font, anchor="mm")
+    
+    # 부제
+    draw1.text((width//2, height//2 + 50), "Elephant Factory", fill=BRAND_COLOR, font=subtitle_font, anchor="mm")
+    
+    # 하단 바
+    draw1.rectangle([(0, height-100), (width, height)], fill=ACCENT_COLOR)
+    draw1.text((width//2, height-50), "카드뉴스", fill='white', font=content_font, anchor="mm")
+    
+    cards.append(card1)
+    
+    # 카드 2: 핵심 정보
+    card2 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    draw2 = ImageDraw.Draw(card2)
+    
+    draw2.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
+    draw2.text((width//2, 100), "📅 일정 및 장소", fill='white', font=subtitle_font, anchor="mm")
+    
+    y_pos = 350
+    if info['date']:
+        draw2.text((100, y_pos), f"📅 {info['date']}", fill=TEXT_COLOR, font=content_font)
+        y_pos += 120
+    
+    if info['time']:
+        draw2.text((100, y_pos), f"🕐 {info['time']}", fill=TEXT_COLOR, font=content_font)
+        y_pos += 120
+    
+    if info['location']:
+        loc_text = info['location'].replace('장소:', '').replace('장소', '').strip()
+        draw2.text((100, y_pos), f"📍 {loc_text}", fill=TEXT_COLOR, font=content_font)
+    
+    draw2.rectangle([(0, height-100), (width, height)], fill=BRAND_COLOR)
+    draw2.text((width//2, height-50), "1/3", fill='white', font=small_font, anchor="mm")
+    
+    cards.append(card2)
+    
+    # 카드 3: 신청 방법
+    card3 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    draw3 = ImageDraw.Draw(card3)
+    
+    draw3.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
+    draw3.text((width//2, 100), "✅ 신청 방법", fill='white', font=subtitle_font, anchor="mm")
+    
+    y_pos = 350
+    if info['target']:
+        target_text = info['target'].replace('대상:', '').replace('대상', '').strip()
+        draw3.text((100, y_pos), f"👥 {target_text}", fill=TEXT_COLOR, font=content_font)
+        y_pos += 150
+    
+    if info['how_to_apply']:
+        apply_text = info['how_to_apply'].replace('신청:', '').replace('신청', '').strip()
+        draw3.text((100, y_pos), f"✍️ {apply_text}", fill=TEXT_COLOR, font=content_font)
+    
+    draw3.rectangle([(0, height-100), (width, height)], fill=BRAND_COLOR)
+    draw3.text((width//2, height-50), "2/3", fill='white', font=small_font, anchor="mm")
+    
+    cards.append(card3)
+    
+    # 카드 4: 연락처
+    card4 = Image.new('RGB', (width, height), BACKGROUND_COLOR)
+    draw4 = ImageDraw.Draw(card4)
+    
+    draw4.rectangle([(0, 0), (width, 200)], fill=BRAND_COLOR)
+    draw4.text((width//2, 100), "📞 문의", fill='white', font=subtitle_font, anchor="mm")
+    
+    y_pos = 450
+    if info['contact']:
+        draw4.text((100, y_pos), info['contact'], fill=TEXT_COLOR, font=content_font)
+        y_pos += 150
+    
+    draw4.text((width//2, y_pos + 100), "💙 많은 참여 바랍니다 💙", fill=BRAND_COLOR, font=subtitle_font, anchor="mm")
+    
+    # 로고 (하단)
+    try:
+        if Path('logos/logo.png').exists():
+            logo = Image.open('logos/logo.png')
+            logo_width = 250
+            logo_height = int(logo_width * logo.size[1] / logo.size[0])
+            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+            if logo.mode != 'RGBA':
+                logo = logo.convert('RGBA')
+            card4.paste(logo, (width//2 - logo_width//2, height - 400), logo)
+    except:
+        pass
+    
+    draw4.rectangle([(0, height-100), (width, height)], fill=ACCENT_COLOR)
+    draw4.text((width//2, height-50), "3/3", fill='white', font=small_font, anchor="mm")
+    
+    cards.append(card4)
+    
+    return cards
 
 # ============================================
 # 메인 UI
@@ -410,7 +569,7 @@ st.markdown("""
 <div class="main-header">
     <h1>🐘 코끼리공장 다국어 홍보물 자동 생성기</h1>
     <p>공문을 자동으로 요약하고 홍보문으로 변환한 후 8개 언어로 번역합니다</p>
-    <p style="font-size: 14px; margin-top: 10px;">✨ 완전 무료 | AI 자동 요약 | 다국어 번역 | 이미지 생성</p>
+    <p style="font-size: 14px; margin-top: 10px;">✨ 완전 무료 | AI 자동 요약 | 카드뉴스 생성 | 다국어 번역</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -434,7 +593,8 @@ with st.sidebar:
     
     st.markdown("""
     ### ✨ 새로운 기능!
-    - 🤖 **AI 자동 요약**
+    - 🎴 **카드뉴스 생성**
+    - 🤖 AI 자동 요약
     - 📝 홍보문 자동 생성
     - 🌏 8개 언어 번역
     - 🖼️ 이미지 자동 생성
@@ -443,13 +603,6 @@ with st.sidebar:
     - Word (.docx)
     - PDF (.pdf)
     - Text (.txt)
-    
-    ### 💡 작동 방식
-    1. 공문 업로드
-    2. AI가 핵심 정보 추출
-    3. 홍보문 스타일로 변환
-    4. 다국어 번역
-    5. 이미지 생성
     """)
 
 # 메인 영역
@@ -489,7 +642,7 @@ with tab1:
                 except Exception as e:
                     st.error(f"❌ 파일 읽기 실패: {str(e)}")
     
-    else:  # 직접 입력
+    else:
         text_content = st.text_area(
             "공문 내용을 입력하세요",
             height=300,
@@ -503,19 +656,16 @@ with tab1:
 신청: 전화 또는 방문 접수
 
 코끼리공장에서 이주민을 위한 무료 한국어 교육을 진행합니다.
-기초부터 차근차근 배울 수 있습니다.
 
 문의: 052-123-4567
 """,
             help="Ctrl+V로 붙여넣기 가능합니다"
         )
     
-    # 원문 표시
     if text_content and len(text_content) > 10:
         with st.expander("📄 원문 보기"):
             st.markdown(f'<div class="original-box">{text_content}</div>', unsafe_allow_html=True)
         
-        # AI 요약 버튼
         st.markdown("---")
         st.header("2️⃣ AI 자동 요약 및 홍보문 생성")
         
@@ -529,16 +679,10 @@ with tab1:
         
         if analyze_button:
             with st.spinner("🤖 AI가 공문을 분석하고 있습니다..."):
-                # 정보 추출
                 info = extract_key_info(text_content)
-                
-                # 요약 생성
                 summary = create_summary(info)
-                
-                # 홍보문 생성
                 promo = create_promo_text(info)
                 
-                # 세션에 저장
                 st.session_state['original'] = text_content
                 st.session_state['summary'] = summary
                 st.session_state['promo'] = promo
@@ -546,19 +690,15 @@ with tab1:
             
             st.success("✅ 분석 완료!")
     
-    # 분석 결과 표시
     if 'promo' in st.session_state:
         st.markdown("---")
         st.header("📊 분석 결과")
         
-        # 요약
         st.subheader("📌 핵심 요약")
         st.markdown(f'<div class="summary-box">{st.session_state["summary"]}</div>', unsafe_allow_html=True)
         
-        # 홍보문
         st.subheader("✨ 생성된 홍보문")
         
-        # 편집 가능하게
         edited_promo = st.text_area(
             "홍보문 (수정 가능)",
             value=st.session_state['promo'],
@@ -570,7 +710,6 @@ with tab1:
         
         st.markdown(f'<div class="promo-box">{edited_promo}</div>', unsafe_allow_html=True)
         
-        # 언어 선택
         st.markdown("---")
         st.header("3️⃣ 번역 언어 선택")
         
@@ -592,16 +731,14 @@ with tab1:
                     if st.checkbox(lang_name, value=True, key=f"lang_{lang_code}"):
                         selected_langs.append(lang_code)
         
-        # 이미지 크기 선택
-        st.header("4️⃣ 이미지 크기 선택")
+        st.header("4️⃣ 이미지 형식 선택")
         
         size_options = st.multiselect(
-            "생성할 이미지 크기를 선택하세요",
-            ["소셜미디어용 (1080x1080)", "A4 인쇄용 (2480x3508)"],
-            default=["소셜미디어용 (1080x1080)", "A4 인쇄용 (2480x3508)"]
+            "생성할 이미지 형식을 선택하세요",
+            ["🎴 카드뉴스 (1080x1920, 여러 장)", "소셜미디어용 (1080x1080)", "A4 인쇄용 (2480x3508)"],
+            default=["🎴 카드뉴스 (1080x1920, 여러 장)", "소셜미디어용 (1080x1080)"]
         )
         
-        # 생성 버튼
         st.header("5️⃣ 최종 생성")
         
         if st.button("🚀 번역 및 이미지 생성 시작!", type="primary", use_container_width=True):
@@ -609,17 +746,20 @@ with tab1:
             if not selected_langs:
                 st.error("❌ 번역할 언어를 최소 1개 이상 선택해주세요")
             elif not size_options:
-                st.error("❌ 이미지 크기를 최소 1개 이상 선택해주세요")
+                st.error("❌ 이미지 형식을 최소 1개 이상 선택해주세요")
             else:
-                # 진행 상황 표시
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
-                # 결과 저장용
                 translations = {}
                 images = {}
+                cardnews_images = {}
                 
-                total_steps = len(selected_langs) * (1 + len(size_options))
+                # 카드뉴스 포함 여부 확인
+                has_cardnews = any("카드뉴스" in opt for opt in size_options)
+                other_sizes = [opt for opt in size_options if "카드뉴스" not in opt]
+                
+                total_steps = len(selected_langs) * (1 + len(other_sizes) + (1 if has_cardnews else 0))
                 current_step = 0
                 
                 # 번역
@@ -634,7 +774,6 @@ with tab1:
                     
                     current_step += 1
                     progress_bar.progress(current_step / total_steps)
-                    
                     time.sleep(0.5)
                 
                 # 이미지 생성
@@ -643,14 +782,26 @@ with tab1:
                 for lang_code, translated_text in translations.items():
                     lang_name = LANGUAGES[lang_code]
                     
-                    # 제목과 내용 분리
                     lines = translated_text.split('\n')
                     title = lines[0][:100] if lines else "공지사항"
                     content = '\n'.join(lines[1:]) if len(lines) > 1 else translated_text
                     
                     images[lang_code] = {}
                     
-                    for size_option in size_options:
+                    # 카드뉴스 생성
+                    if has_cardnews:
+                        status_text.text(f"🎴 카드뉴스 생성 중... {lang_name}")
+                        try:
+                            cards = create_cardnews(st.session_state['info'], lang_code)
+                            cardnews_images[lang_code] = cards
+                        except Exception as e:
+                            st.warning(f"⚠️ {lang_name} 카드뉴스 생성 실패: {str(e)}")
+                        
+                        current_step += 1
+                        progress_bar.progress(current_step / total_steps)
+                    
+                    # 다른 사이즈 생성
+                    for size_option in other_sizes:
                         if "소셜" in size_option:
                             size_type = 'social'
                             size_name = '소셜미디어'
@@ -663,7 +814,6 @@ with tab1:
                         try:
                             img = create_promo_image(title, content, lang_code, size_type)
                             
-                            # 이미지를 바이트로 변환
                             img_byte_arr = io.BytesIO()
                             img.save(img_byte_arr, format='PNG')
                             img_byte_arr.seek(0)
@@ -679,13 +829,11 @@ with tab1:
                 progress_bar.progress(1.0)
                 status_text.text("✅ 완료!")
                 
-                # 결과 표시
                 st.success("🎉 홍보물 생성 완료!")
                 
                 st.markdown("---")
                 st.header("📥 결과물 다운로드")
                 
-                # 탭으로 언어별 표시
                 lang_tabs = st.tabs([LANGUAGES[lang] for lang in selected_langs])
                 
                 for idx, lang_code in enumerate(selected_langs):
@@ -698,24 +846,47 @@ with tab1:
                             key=f"trans_{lang_code}"
                         )
                         
-                        st.subheader("🖼️ 이미지")
-                        
-                        cols = st.columns(len(size_options))
-                        
-                        for col_idx, size_option in enumerate(size_options):
-                            size_type = 'social' if "소셜" in size_option else 'a4'
-                            size_name = '소셜미디어' if size_type == 'social' else 'A4'
+                        # 카드뉴스 표시
+                        if lang_code in cardnews_images:
+                            st.subheader("🎴 카드뉴스")
                             
-                            with cols[col_idx]:
-                                if size_type in images.get(lang_code, {}):
-                                    img_bytes = images[lang_code][size_type]
+                            card_cols = st.columns(min(len(cardnews_images[lang_code]), 4))
+                            for card_idx, card in enumerate(cardnews_images[lang_code]):
+                                with card_cols[card_idx % 4]:
+                                    card_bytes = io.BytesIO()
+                                    card.save(card_bytes, format='PNG')
+                                    card_bytes.seek(0)
+                                    
+                                    st.image(card_bytes.getvalue(), caption=f"카드 {card_idx+1}", use_container_width=True)
+                                    
+                                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                                    filename = f"카드뉴스_{lang_code}_{card_idx+1}_{timestamp}.png"
+                                    
+                                    st.download_button(
+                                        label=f"💾 카드 {card_idx+1}",
+                                        data=card_bytes.getvalue(),
+                                        file_name=filename,
+                                        mime="image/png",
+                                        key=f"dl_card_{lang_code}_{card_idx}"
+                                    )
+                        
+                        # 일반 이미지 표시
+                        if images.get(lang_code):
+                            st.subheader("🖼️ 이미지")
+                            
+                            cols = st.columns(len(images[lang_code]))
+                            
+                            for col_idx, (size_type, img_bytes) in enumerate(images[lang_code].items()):
+                                size_name = '소셜미디어' if size_type == 'social' else 'A4'
+                                
+                                with cols[col_idx]:
                                     st.image(img_bytes, caption=f"{size_name}용", use_container_width=True)
                                     
                                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                                     filename = f"홍보물_{lang_code}_{size_type}_{timestamp}.png"
                                     
                                     st.download_button(
-                                        label=f"💾 {size_name}용 다운로드",
+                                        label=f"💾 {size_name}용",
                                         data=img_bytes,
                                         file_name=filename,
                                         mime="image/png",
@@ -729,22 +900,25 @@ with tab1:
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                     
-                    # 원문 저장
                     zip_file.writestr("원문.txt", st.session_state['original'].encode('utf-8'))
-                    
-                    # 요약 저장
                     zip_file.writestr("요약.txt", st.session_state['summary'].encode('utf-8'))
-                    
-                    # 홍보문 저장
                     zip_file.writestr("홍보문_한국어.txt", edited_promo.encode('utf-8'))
                     
-                    # 번역문 저장
                     for lang_code, text in translations.items():
                         if lang_code != 'ko':
                             filename = f"번역문/홍보문_{lang_code}.txt"
                             zip_file.writestr(filename, text.encode('utf-8'))
                     
-                    # 이미지 저장
+                    # 카드뉴스 저장
+                    for lang_code, cards in cardnews_images.items():
+                        for card_idx, card in enumerate(cards):
+                            card_bytes = io.BytesIO()
+                            card.save(card_bytes, format='PNG')
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            filename = f"카드뉴스/카드뉴스_{lang_code}_{card_idx+1}_{timestamp}.png"
+                            zip_file.writestr(filename, card_bytes.getvalue())
+                    
+                    # 일반 이미지 저장
                     for lang_code, size_dict in images.items():
                         for size_type, img_bytes in size_dict.items():
                             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -761,149 +935,50 @@ with tab1:
                 )
 
 with tab2:
-    st.header("💡 변환 예시")
+    st.header("💡 카드뉴스 예시")
+    
+    st.info("카드뉴스는 4장으로 구성됩니다: 표지 → 일정/장소 → 신청방법 → 연락처")
     
     st.markdown("""
-    ### 공문 → 홍보문 변환 예시
+    ### 🎴 카드뉴스 구성
     
-    AI가 어떻게 변환하는지 예시를 보여드립니다.
-    """)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("📄 원본 공문")
-        st.markdown("""
-        ```
-        이주민 한국어 교육 프로그램 운영 안내
-        
-        1. 목적: 이주민의 한국어 능력 향상
-        2. 일시: 2025년 1월 15일(수) 14:00
-        3. 장소: 코끼리공장 2층 교육실
-        4. 대상: 울산 거주 이주민
-        5. 내용: 기초 한국어 회화 교육
-        6. 신청: 방문 또는 전화 접수
-        7. 문의: 052-123-4567
-        ```
-        """)
-    
-    with col2:
-        st.subheader("✨ 생성된 홍보문")
-        st.markdown("""
-        ```
-        🎉 이주민 한국어 교육 프로그램 🎉
-        
-        이주민을 위한 무료 교육 프로그램에 
-        참여하세요! 📚
-        
-        📅 2025년 1월 15일(수) 14:00
-        📍 코끼리공장 2층 교육실
-        
-        ✅ 방문 또는 전화로 신청하세요!
-        📞 문의: 052-123-4567
-        
-        💙 많은 참여 바랍니다! 💙
-        ```
-        """)
-    
-    st.markdown("---")
-    
-    st.info("""
-    💡 **변환 특징**
-    - 복잡한 공문 형식 → 간결하고 친근한 홍보문
-    - 핵심 정보만 추출 (날짜, 장소, 신청 방법)
-    - 이모지 추가로 시각적 효과
-    - 참여를 유도하는 문구 포함
+    1. **표지** - 제목과 로고
+    2. **일정/장소** - 날짜, 시간, 장소 정보
+    3. **신청방법** - 대상, 신청 방법
+    4. **연락처** - 문의처와 마무리 멘트
     """)
 
 with tab3:
     st.header("📖 사용 방법")
     
     st.markdown("""
-    ### 🚀 전체 프로세스
+    ### 🆕 카드뉴스 기능
     
-    #### 1️⃣ 공문 입력
-    - 파일 업로드 (워드, PDF, 텍스트)
-    - 또는 직접 복사 & 붙여넣기
+    - 공문 내용이 **4장의 카드**로 자동 분할
+    - 세로형 (1080x1920) 인스타그램/페이스북 최적화
+    - 각 카드는 개별 다운로드 가능
     
-    #### 2️⃣ AI 분석
-    - "분석 시작" 버튼 클릭
-    - AI가 자동으로:
-      - 제목, 날짜, 장소, 연락처 등 추출
-      - 핵심 내용 요약
-      - 홍보문 스타일로 변환
+    ### 🎨 디자인 특징
     
-    #### 3️⃣ 홍보문 수정 (선택)
-    - 생성된 홍보문을 확인
-    - 필요시 직접 수정 가능
-    
-    #### 4️⃣ 언어 선택
-    - 번역할 언어 체크
-    - 여러 개 동시 선택 가능
-    
-    #### 5️⃣ 이미지 크기 선택
-    - 소셜미디어용 (1080x1080)
-    - A4 인쇄용 (2480x3508)
-    
-    #### 6️⃣ 생성 & 다운로드
-    - "생성 시작" 버튼 클릭
-    - 자동으로 번역 및 이미지 생성
-    - 개별 또는 일괄 다운로드
-    
-    ---
-    
-    ### 🌏 지원 언어
-    
-    - 🇰🇷 한국어
-    - 🇺🇸 영어
-    - 🇯🇵 일본어
-    - 🇨🇳 중국어(간체)
-    - 🇻🇳 베트남어
-    - 🇷🇺 러시아어
-    - 🇺🇿 우즈베키스탄어
-    - 🇱🇰 스리랑카어
-    
-    ---
-    
-    ### 💡 팁
-    
-    1. **공문 작성 팁**
-       - 날짜, 시간, 장소를 명확히 표기
-       - 연락처 포함
-       - 신청 방법 명시
-    
-    2. **더 좋은 결과를 위해**
-       - 공문이 너무 길면 핵심만 입력
-       - 중요한 정보는 앞부분에 배치
-       - 생성 후 홍보문을 검토하고 수정
-    
-    3. **이미지 활용**
-       - 소셜미디어: 인스타그램, 페이스북
-       - A4: 포스터, 전단지 인쇄
-    
-    ---
+    - 코끼리공장 브랜드 컬러 (#2B9FD9) 적용
+    - 연한 하늘색 배경 (#E8F4F8) 통일
+    - 깔끔하고 전문적인 레이아웃
     
     ### ⚠️ 주의사항
     
-    - ✅ 완전 무료로 사용 가능
-    - ✅ 인터넷 연결 필요 (번역 기능)
-    - ✅ 한글 파일(.hwp)은 미지원
-    - ✅ 생성된 홍보문은 반드시 검토 후 사용
-    
-    ---
-    
-    ### 📞 문의
-    
-    울산 코끼리공장  
-    [연락처 입력]
+    - 카드뉴스는 한국어 기준으로 생성 후 번역
+    - 텍스트가 너무 길면 잘릴 수 있음
+    - 공문은 핵심 정보 위주로 간결하게 작성 권장
     """)
 
 # 푸터
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; padding: 1rem;">
-    🐘 코끼리공장 다국어 홍보물 자동 생성기 v2.0<br>
-    ✨ AI 자동 요약 기능 추가 | 완전 무료<br>
+    🐘 코끼리공장 다국어 홍보물 자동 생성기 v3.0<br>
+    ✨ 카드뉴스 기능 추가 | AI 자동 요약 | 완전 무료<br>
     Made with ❤️ for Elephant Factory
 </div>
 """, unsafe_allow_html=True)
+
+
