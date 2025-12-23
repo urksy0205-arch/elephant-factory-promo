@@ -502,100 +502,34 @@ def create_promo_image(title, content, lang_code, size_type='social'):
     except:
         pass
     
-    # 폰트 설정 (한글 지원 폰트 사용)
+    # 폰트 설정
     try:
-        # Windows
         title_font = ImageFont.truetype("malgun.ttf", int(height * 0.05))
-        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.03))
-        emoji_font = ImageFont.truetype("seguiemj.ttf", int(height * 0.03))
+        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.025))
     except:
         try:
-            # Mac
-            title_font = ImageFont.truetype("/System/Library/Fonts/AppleSDGothicNeo.ttc", int(height * 0.05))
-            content_font = ImageFont.truetype("/System/Library/Fonts/AppleSDGothicNeo.ttc", int(height * 0.03))
-            emoji_font = content_font
+            title_font = ImageFont.truetype("arial.ttf", int(height * 0.05))
+            content_font = ImageFont.truetype("arial.ttf", int(height * 0.025))
         except:
-            try:
-                # Linux
-                title_font = ImageFont.truetype("/usr/share/fonts/truetype/nanum/NanumGothic.ttf", int(height * 0.05))
-                content_font = ImageFont.truetype("/usr/share/fonts/truetype/nanum/NanumGothic.ttf", int(height * 0.03))
-                emoji_font = content_font
-            except:
-                # 기본 폰트 (최후의 수단)
-                title_font = ImageFont.load_default()
-                content_font = ImageFont.load_default()
-                emoji_font = content_font
+            title_font = ImageFont.load_default()
+            content_font = ImageFont.load_default()
     
-    # 제목 그리기 (이모지 제거)
-    title_y = int(height * 0.2)
-    title_clean = re.sub(r'[^\w\s가-힣]', '', title).strip()
+    # 제목 그리기
+    title_y = int(height * 0.25)
+    title_clean = re.sub(r'[^\w\s가-힣]', '', title)
+    draw.text((50, title_y), title_clean[:50], fill='#333333', font=title_font)
     
-    # 제목을 중앙 정렬로 그리기
-    title_bbox = draw.textbbox((0, 0), title_clean[:50], font=title_font)
-    title_width = title_bbox[2] - title_bbox[0]
-    title_x = (width - title_width) // 2
+    # 내용 그리기
+    content_y = int(height * 0.4)
+    lines = content.split('\n')[:8]
     
-    draw.text((title_x, title_y), title_clean[:50], fill='#333333', font=title_font)
-    
-    # 내용 그리기 (카드뉴스 스타일)
-    content_y = int(height * 0.35)
-    line_height = int(height * 0.06)
-    
-    lines = content.split('\n')
-    
-    # 박스 스타일로 각 줄 그리기
-    y_position = content_y
-    
-    for i, line in enumerate(lines[:10]):  # 최대 10줄
-        line = line.strip()
-        if not line:
-            continue
-        
-        # 이모지와 텍스트 분리
-        emoji_match = re.match(r'^([📅📍📞✅💙🎉🎊📚🙌✨]+)\s*(.+)$', line)
-        
-        if emoji_match:
-            emoji = emoji_match.group(1)
-            text = emoji_match.group(2)
-            
-            # 배경 박스 그리기 (연한 회색)
-            box_padding = 20
-            text_bbox = draw.textbbox((0, 0), text, font=content_font)
-            text_width = text_bbox[2] - text_bbox[0]
-            
-            box_x1 = 50
-            box_y1 = y_position - 10
-            box_x2 = width - 50
-            box_y2 = y_position + line_height - 10
-            
-            # 중요 정보는 노란색 박스
-            if any(e in emoji for e in ['📅', '📍', '📞']):
-                box_color = '#FFF9E6'
-                border_color = '#FFD700'
-            else:
-                box_color = '#F5F5F5'
-                border_color = '#DDDDDD'
-            
-            # 박스 그리기
-            draw.rectangle([box_x1, box_y1, box_x2, box_y2], fill=box_color, outline=border_color, width=2)
-            
-            # 이모지 그리기
-            try:
-                draw.text((box_x1 + 15, y_position), emoji, fill='#333333', font=emoji_font, embedded_color=True)
-            except:
-                pass
-            
-            # 텍스트 그리기
-            draw.text((box_x1 + 60, y_position), text[:50], fill='#333333', font=content_font)
-            
-        else:
-            # 일반 텍스트 (이모지 없음)
-            text_clean = re.sub(r'[^\w\s가-힣:/-]', '', line)
-            draw.text((70, y_position), text_clean[:60], fill='#333333', font=content_font)
-        
-        y_position += line_height
+    for i, line in enumerate(lines):
+        y = content_y + (i * int(height * 0.04))
+        line_clean = re.sub(r'[^\w\s가-힣:/-]', '', line)
+        draw.text((50, y), line_clean[:60], fill='#333333', font=content_font)
     
     return img
+
 
 
 # ============================================
@@ -1282,4 +1216,5 @@ st.markdown("""
     Made with ❤️ for Elephant Factory
 </div>
 """, unsafe_allow_html=True)
+
 
