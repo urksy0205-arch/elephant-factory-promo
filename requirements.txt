@@ -1,6 +1,10 @@
 streamlit
-pillow
+opencv-python-headless
+numpy
+mtcnn
+tensorflow
+Pillow
+python-pptx
+deep-translator
 python-docx
 PyPDF2
-deep-translator
-reportlab
