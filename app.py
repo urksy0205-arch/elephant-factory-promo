@@ -464,7 +464,7 @@ def create_ppt_slide(title, content, lang_code, size_type='social'):
 # ============================================
 
 def create_promo_image(title, content, lang_code, size_type='social'):
-    """홍보 이미지 생성"""
+    """홍보 이미지 생성 - 카드뉴스 스타일"""
     
     # 크기 설정
     if size_type == 'social':
@@ -505,28 +505,102 @@ def create_promo_image(title, content, lang_code, size_type='social'):
     # 폰트 설정
     try:
         title_font = ImageFont.truetype("malgun.ttf", int(height * 0.05))
-        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.025))
+        content_font = ImageFont.truetype("malgun.ttf", int(height * 0.03))
     except:
         try:
             title_font = ImageFont.truetype("arial.ttf", int(height * 0.05))
-            content_font = ImageFont.truetype("arial.ttf", int(height * 0.025))
+            content_font = ImageFont.truetype("arial.ttf", int(height * 0.03))
         except:
             title_font = ImageFont.load_default()
             content_font = ImageFont.load_default()
     
     # 제목 그리기
-    title_y = int(height * 0.25)
+    title_y = int(height * 0.2)
     title_clean = re.sub(r'[^\w\s가-힣]', '', title)
-    draw.text((50, title_y), title_clean[:50], fill='#333333', font=title_font)
     
-    # 내용 그리기
-    content_y = int(height * 0.4)
-    lines = content.split('\n')[:8]
+    # 제목 중앙 정렬
+    try:
+        bbox = draw.textbbox((0, 0), title_clean[:50], font=title_font)
+        title_width = bbox[2] - bbox[0]
+        title_x = (width - title_width) // 2
+    except:
+        title_x = 50
     
-    for i, line in enumerate(lines):
-        y = content_y + (i * int(height * 0.04))
-        line_clean = re.sub(r'[^\w\s가-힣:/-]', '', line)
-        draw.text((50, y), line_clean[:60], fill='#333333', font=content_font)
+    draw.text((title_x, title_y), title_clean[:50], fill='#2B9FD9', font=title_font)
+    
+    # 구분선
+    line_y = int(height * 0.28)
+    draw.line([(100, line_y), (width - 100, line_y)], fill='#DDDDDD', width=3)
+    
+    # 내용 그리기 (카드뉴스 스타일)
+    content_y = int(height * 0.33)
+    line_height = int(height * 0.07)
+    
+    lines = content.split('\n')
+    y_position = content_y
+    
+    for i, line in enumerate(lines[:9]):  # 최대 9줄
+        line = line.strip()
+        if not line or len(line) < 2:
+            continue
+        
+        # 박스 좌표
+        box_x1 = 60
+        box_y1 = y_position
+        box_x2 = width - 60
+        box_y2 = y_position + int(line_height * 0.85)
+        
+        # 이모지에 따라 색상 결정
+        if '📅' in line or '일시' in line or '시간' in line:
+            # 날짜/시간 - 파란색
+            box_color = '#E3F2FD'
+            border_color = '#2196F3'
+            text_color = '#1565C0'
+        elif '📍' in line or '장소' in line or '위치' in line:
+            # 장소 - 초록색
+            box_color = '#E8F5E9'
+            border_color = '#4CAF50'
+            text_color = '#2E7D32'
+        elif '📞' in line or '문의' in line or '연락' in line:
+            # 연락처 - 주황색
+            box_color = '#FFF3E0'
+            border_color = '#FF9800'
+            text_color = '#E65100'
+        elif '✅' in line or '신청' in line or '접수' in line:
+            # 신청 - 보라색
+            box_color = '#F3E5F5'
+            border_color = '#9C27B0'
+            text_color = '#6A1B9A'
+        elif '💙' in line or '참여' in line:
+            # 참여 유도 - 분홍색
+            box_color = '#FCE4EC'
+            border_color = '#E91E63'
+            text_color = '#C2185B'
+        else:
+            # 기본 - 회색
+            box_color = '#F5F5F5'
+            border_color = '#BDBDBD'
+            text_color = '#424242'
+        
+        # 둥근 박스 그리기
+        draw.rounded_rectangle(
+            [box_x1, box_y1, box_x2, box_y2],
+            radius=15,
+            fill=box_color,
+            outline=border_color,
+            width=4
+        )
+        
+        # 텍스트 정리 (특수문자는 유지, 이모지만 제거하지 않음)
+        line_clean = line.replace(':', ' :').replace('  ', ' ')
+        
+        # 텍스트 그리기 (박스 안에)
+        text_x = box_x1 + 25
+        text_y = y_position + int(line_height * 0.2)
+        
+        draw.text((text_x, text_y), line_clean[:55], fill=text_color, font=content_font)
+        
+        y_position += line_height
     
     return img
 
@@ -1216,5 +1290,6 @@ st.markdown("""
     Made with ❤️ for Elephant Factory
 </div>
 """, unsafe_allow_html=True)
+
 
 
